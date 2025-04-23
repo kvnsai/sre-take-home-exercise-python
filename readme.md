@@ -119,8 +119,8 @@ if __name__ == "__main__":
 Above code changes make the execution of the monitoring scripts meet the given requirements. But we can modify this to meet other requirements which can help improve the application which is monitored.
 
 We can log for each of the URL if we need to check for individual endpoint status at some point of time in history.
-Following this format `<URL> - <status> - <timestamp>` and saving them to a database or CSV, we can aggregate using other functions or read using visualisation tool and aggregating there. We can run it asynchronously for a large number 
-
+Following this format `<URL> - <status> - <timestamp>` and saving them to a database or CSV, we can aggregate using other functions or read using visualisation tool and aggregating there. We can run it asynchronously for a large number of endpoints.
+Didn't implement any changes doing this.
 
 ```python
 def monitor_endpoints(file_path):              
