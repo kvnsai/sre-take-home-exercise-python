@@ -6,34 +6,11 @@ from collections import defaultdict
 # import logging, csv
 
 import json
-
+import logging
 import aiohttp
 import asyncio
-import logging
 from aiohttp import ClientError, ClientTimeout
 
-
-
-"""
-TO DO
-
-load_config
-- Exception handling for file errors in .
-
-check_health
-- Exception handling for loading optional values of YAML 
-- Check for response <500ms 
-
-Monitor Endpoitns:
-- Split for ports as well (Done)
-- Write to CSV file <domain> <up> <timestamp> (Done)
-- Exception to skip an unhealthy one.
-
-Question to ask:
-1. Given that there is no max number of endpoints, can I assume that system on which monitoring code is executing has suffient resources or there exist any constraints?
-2. What do you mean by log. Should we write it to a file or database. If so, can I choose on any format that does the job or some thing as in the provided code only?
-3. Should we expect the the code be tested. There is scope for lot of improvements to the given script. But it might not be possible for successful execution without knowing about the test environment?
-"""
 
 # Function to load configuration from the YAML file
 def load_config(file_path):
@@ -45,7 +22,17 @@ def load_config(file_path):
         sys.exit(1)
     
 # Function to perform health checks
-async def check_health(endpoint, session, timeout=2.5):
+async def check_health(endpoint, session, timeout=0.5):
+    # Configure logging
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        handlers=[
+            logging.FileHandler("monitor.log"),
+            logging.StreamHandler()
+        ]
+    )
+
     url = endpoint['url']                         # Always present  !
     method = endpoint.get('method', 'GET')        # Default to GET if not present !
     headers = endpoint.get('headers', {})         # Default to empty headers !
@@ -55,20 +42,19 @@ async def check_health(endpoint, session, timeout=2.5):
     # print (method, url , headers, body)
 
     try:
+        
         # response = requests.request(method, url, headers=headers, json=body, timeout =0.5)  # Check for respose time < 500 !
         async with session.request(method, url, headers=headers, json=json_body, timeout=timeout) as response:
-            
+         
             if 200 <= response.status < 300:
-                print (url, "UP")
                 return "UP"
             else:
-                print (url, "DOWN with diffrent code")
                 return "DOWN"
     except asyncio.TimeoutError:
-        logging.warning(f"Timeout reached for {url}")
+        # logging.error(f"Timeout reached for {url}")
         return "DOWN"
     except Exception as e:
-        logging.error(f"Error occurred while checking {url}: {str(e)}")
+        # logging.error(f"Error occurred while checking {url}: {str(e)}")
         return "DOWN"
 
 
@@ -150,7 +136,7 @@ def monitor_endpoints(file_path):
 #                 if result == "UP":
 #                     domain_stats[domain]["up"] += 1
                 
-#                 writer.writerow([domain, result, datetime.now().strftime("%Y-%m-%d %H:%M:%S")])  ## Writing to CSV this way can help easily understand hisotrical events. We can aggregate using other function or this csv can be read using visualisation tool and aggregating there.  
+#                 writer.writerow([endpoint["url"], result, datetime.now().strftime("%Y-%m-%d %H:%M:%S")])  ## Writing to CSV this way can help easily understand hisotrical events. We can aggregate using other function or this csv can be read using visualisation tool and aggregating there.  
 
 #             # Log cumulative availability percentages
 #             for domain, stats in domain_stats.items():
